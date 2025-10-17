@@ -16,16 +16,18 @@ const userSchema = new mongoose.Schema({
     },
     dateOfBirth : {
         type : Date,
-        required : true
+        required : false
     },
     lastLogin : {
         type: Date,
         default: Date.now()
     },
-    resetPasswordToken : String,
-    resetPasswordExpiresAt : Date,
-    verificationToken : String,
-    verificationTokenExpiresAt : Date
+    // resetPasswordToken : String,
+    // resetPasswordExpiresAt : Date,
+    // verificationToken : String,
+    // verificationTokenExpiresAt : Date
 }, { timestamps: true });
 
-export const User = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+export default User;
