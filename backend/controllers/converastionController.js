@@ -31,7 +31,7 @@ export const listTemplates = async (req, res, next) => {
 
 export const startInstance = async (req, res, next) => {
   try {
-    const { templateId, participants = [], metadata } = req.body;
+    const { templateId, metadata } = req.body;
     if (!mongoose.Types.ObjectId.isValid(templateId)) return res.status(400).json({ message: 'Invalid templateId' });
     const tpl = await SelectionConversationTemplate.findById(templateId);
     if (!tpl) return res.status(404).json({ message: 'Template not found' });
@@ -39,11 +39,12 @@ export const startInstance = async (req, res, next) => {
     const entry = tpl.entryNodeKey || (tpl.nodes.length ? tpl.nodes[0].key : null);
     if (!entry) return res.status(400).json({ message: 'Template has no entry node' });
 
+    // Add the authenticated user to participants
     const instance = new SelectionConversationInstance({
       template: tpl._id,
-      participants,
+      participants: [req.user.id], // User from auth middleware
       currentNodeKey: entry,
-      metadata
+      metadata: { ...metadata, userId: req.user.id }
     });
     await instance.save();
     return res.status(201).json(instance);
@@ -54,8 +55,17 @@ export const getInstance = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid id' });
+    
+    // Find instance and check if user is a participant
     const inst = await SelectionConversationInstance.findById(id).populate('template');
     if (!inst) return res.status(404).json({ message: 'Instance not found' });
+    
+    // Check if the user is a participant in this conversation
+    const isParticipant = inst.participants.some(p => p.toString() === req.user.id.toString());
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied. You are not a participant in this conversation.' });
+    }
+    
     return res.json(inst);
   } catch (err) { next(err); }
 };
@@ -71,6 +81,13 @@ export const chooseOption = async (req, res, next) => {
     // load instance + template
     const inst = await SelectionConversationInstance.findById(id);
     if (!inst) return res.status(404).json({ message: 'Instance not found' });
+    
+    // Check if the user is a participant
+    const isParticipant = inst.participants.some(p => p.toString() === req.user.id.toString());
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied. You are not a participant in this conversation.' });
+    }
+    
     if (inst.status !== 'active') return res.status(400).json({ message: `Instance not active: ${inst.status}` });
 
     const tpl = await SelectionConversationTemplate.findById(inst.template);
@@ -102,9 +119,16 @@ export const chooseOption = async (req, res, next) => {
 
 export const listInstances = async (req, res, next) => {
   try {
-    const q = { status: { $ne: 'deleted' } };
-    if (req.query.participant) q.participants = req.query.participant;
-    const items = await SelectionConversationInstance.find(q).sort({ updatedAt: -1 }).limit(100);
+    // Filter instances to show only those where the user is a participant
+    const q = { 
+      status: { $ne: 'deleted' },
+      participants: req.user.id // Only show user's own conversations
+    };
+    
+    const items = await SelectionConversationInstance.find(q)
+      .populate('template')
+      .sort({ updatedAt: -1 })
+      .limit(100);
     return res.json(items);
   } catch (err) { next(err); }
 };
@@ -113,8 +137,21 @@ export const softDeleteInstance = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid id' });
-    const inst = await SelectionConversationInstance.findByIdAndUpdate(id, { status: 'deleted' }, { new: true });
+    
+    // Find the instance first to check ownership
+    const inst = await SelectionConversationInstance.findById(id);
     if (!inst) return res.status(404).json({ message: 'Instance not found' });
+    
+    // Check if the user is a participant
+    const isParticipant = inst.participants.some(p => p.toString() === req.user.id.toString());
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied. You cannot delete this conversation.' });
+    }
+    
+    // Update status to deleted
+    inst.status = 'deleted';
+    await inst.save();
+    
     return res.json({ message: 'deleted', id: inst._id });
   } catch (err) { next(err); }
 };

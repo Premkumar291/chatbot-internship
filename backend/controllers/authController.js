@@ -26,10 +26,10 @@ export const registerUser = async (req, res, next) => {
     await user.save();
     if (user) {
       const refreshToken = generateRefreshToken(user._id);
-      // Parse the maxAge value properly
+      
       const maxAge = process.env.JWT_REFRESH_EXPIRES_IN
-        ? parseInt(process.env.JWT_REFRESH_EXPIRES_IN) * 24 * 60 * 60 * 1000 // Convert days to milliseconds
-        : 30 * 24 * 60 * 60 * 1000; // Default to 30 days
+        ? parseInt(process.env.JWT_REFRESH_EXPIRES_IN) * 24 * 60 * 60 * 1000 
+        : 30 * 24 * 60 * 60 * 1000; 
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -46,7 +46,6 @@ export const registerUser = async (req, res, next) => {
     return res.status(400).json({ message: "Invalid user data" });
   } catch (err) {
     console.error("Registration error:", err);
-    next(err);
   }
 };
 
@@ -80,7 +79,6 @@ export const logInUser = async (req, res, next) => {
     return res.status(401).json({ message: "Invalid email or password" });
   } catch (err) {
     console.error("Login error:", err);
-    next(err);
   }
 };
 
@@ -97,7 +95,7 @@ export const logOutUser = async (req, res, next) => {
     });
     return res.json({ message: "Logged out" });
   } catch (err) {
-    next(err);
+    console.log("Logout error:", err);
   }
 };
 
@@ -108,7 +106,7 @@ export const getProfile = async (req, res, next) => {
     if (user) return res.json(user);
     return res.status(404).json({ message: "User not found" });
   } catch (err) {
-    next(err);
+    console.log("Profile error:", err)
   }
 };
 
@@ -132,6 +130,6 @@ export const refreshToken = async (req, res, next) => {
     const accessToken = generateToken(decoded.id);
     return res.json({ token: accessToken });
   } catch (err) {
-    next(err);
+    console.log("Refresh token error:", err)
   }
 };

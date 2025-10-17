@@ -14,10 +14,6 @@ const userSchema = new mongoose.Schema({
         type:String,
         required:true
     },
-    dateOfBirth : {
-        type : Date,
-        required : false
-    },
     lastLogin : {
         type: Date,
         default: Date.now()

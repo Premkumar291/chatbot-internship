@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { connectDb } from './config/dataBase.config.js';
+import { initializeTemplate } from './utils/initializeTemplate.js';
 
 //importing routes
 import authRoutes from './routes/auth.route.js';
@@ -24,5 +25,6 @@ app.use('/api/conversations', conversationRoutes);
 
 app.listen(PORT, async() => {
     await connectDb();
+    await initializeTemplate();
     console.log(`Server Started and running on http://localhost:${PORT}`);
 });

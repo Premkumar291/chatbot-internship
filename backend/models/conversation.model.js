@@ -60,7 +60,7 @@ const templateSchema = new mongoose.Schema(
     },
     entryNodeKey: {
       type: String,
-    }, // key of starting node; if empty uses nodes[0].key
+    },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

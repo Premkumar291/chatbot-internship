@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ConversationView from './pages/ConversationView';
+import TemplateSelection from './pages/TemplateSelection';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/templates" element={<ProtectedRoute><TemplateSelection /></ProtectedRoute>} />
             <Route path="/conversation/:id" element={<ProtectedRoute><ConversationView /></ProtectedRoute>} />
           </Routes>
         </div>
